@@ -5,78 +5,67 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Para Shirley</title>
     <style>
-        /* Estilos base con el marrón oscuro de la captura */
         body {
-            background-color: #1c100b;
+            background-color: #1c100b; /* Marrón oscuro */
             color: #ffffff;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: center;
+            justify-content: flex-start;
             min-height: 100vh;
             margin: 0;
             overflow: hidden;
             position: relative;
+            padding-top: 12vh; /* Margen superior para los animales */
+            box-sizing: border-box;
         }
 
-        /* Contenedor principal de los animales, centrado sobre la tarjeta */
-        .animals-container {
-            position: absolute;
-            top: 48%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            display: flex;
-            gap: 120px; /* Espacio entre los dos animales */
+        /* Cuadrícula optimizada y ligera: 22 columnas por 10 filas */
+        .canvas {
+            display: grid;
+            grid-template-columns: repeat(22, 14px); 
+            grid-template-rows: repeat(10, 14px);
+            gap: 3px;
+            margin-bottom: 50px; /* Separación fija para que el texto no tape nada */
             z-index: 1;
         }
 
-        /* Cuadrículas individuales para cada animal con mayor densidad */
-        .canvas {
-            display: grid;
-            grid-template-columns: repeat(20, 10px);
-            grid-template-rows: repeat(20, 10px);
-            gap: 1px;
-        }
-
-        /* Estilo de cada "pixel" emoji de fondo */
         .pixel {
-            width: 10px;
-            height: 10px;
+            width: 14px;
+            height: 14px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 9px;
-            opacity: 0; /* Ocultos al inicio */
+            font-size: 13px;
+            opacity: 0; 
             transform: scale(0.3);
             transition: opacity 0.3s ease, transform 0.3s ease;
         }
 
-        /* Estado activo progresivo con opacidad translucida idéntica a la captura */
         .active {
-            opacity: 0.35;
+            opacity: 0.38; /* Translucidez idéntica a la captura */
             transform: scale(1);
         }
 
-        /* Tarjeta flotante central translúcida con desenfoque de fondo */
-        .message-card {
-            background-color: rgba(25, 15, 10, 0.65);
+        /* Tarjeta del mensaje ubicada abajo de forma segura */
+        .tarjeta-mensaje {
+            background-color: rgba(25, 15, 10, 0.6);
             backdrop-filter: blur(8px);
             -webkit-backdrop-filter: blur(8px);
             border-radius: 15px;
-            padding: 32px 24px;
-            width: 85%;
+            padding: 24px 20px;
+            width: 88%;
             max-width: 360px;
             box-sizing: border-box;
             text-align: center;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-            z-index: 2; /* Sobre los animales */
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+            z-index: 2;
             border: 1px solid rgba(255, 255, 255, 0.05);
         }
 
-        /* Estilo del texto principal */
-        .main-text {
-            font-size: 20px;
+        .texto-principal {
+            font-size: 19px;
             font-weight: 600;
             line-height: 1.5;
             color: #eeeeee;
@@ -84,18 +73,17 @@
             word-wrap: break-word;
         }
 
-        /* Cursor de escritura parpadeante */
         .cursor {
             display: inline-block;
             width: 2px;
-            height: 20px;
+            height: 19px;
             background-color: #ffffff;
             margin-left: 2px;
             vertical-align: middle;
-            animation: blink 0.8s infinite;
+            animation: parpadeo 0.8s infinite;
         }
 
-        @keyframes blink {
+        @keyframes parpadeo {
             0%, 100% { opacity: 0; }
             50% { opacity: 1; }
         }
@@ -103,94 +91,77 @@
 </head>
 <body>
 
-    <div class="animals-container">
-        <div class="canvas" id="donkeyCanvas"></div>
-        <div class="canvas" id="pigCanvas"></div>
-    </div>
+    <div class="canvas" id="animalesCanvas"></div>
 
-    <div class="message-card">
-        <p class="main-text">
-            <span id="text"></span><span class="cursor"></span>
+    <div class="tarjeta-mensaje">
+        <p class="texto-principal">
+            <span id="texto"></span><span class="cursor"></span>
         </p>
     </div>
 
     <script>
-        // Mapas de alta definición (1 = emoji, 0 = vacío)
-        
-        // Mapa del Burro (🫏) 20x20 - Forma mucho más definida
-        const donkeyMap = [
-            [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-            [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,0,0,0],
-            [0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,0,0,0],
-            [0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,0,0,0],
-            [0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,0,0,0],
-            [0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,0,0,0],
-            [0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,0,0],
-            [0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,0,0],
-            [0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0],
-            [0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0],
-            [0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0],
-            [0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0],
-            [0,0,0,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0],
-            [0,0,0,0,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0],
-            [0,0,0,0,1,1,1,0,0,1,1,1,0,0,0,0,0,0,0,0],
-            [0,0,0,0,1,1,0,0,0,1,1,1,0,0,0,0,0,0,0,0],
-            [0,0,0,0,1,1,0,0,0,1,1,1,0,0,0,0,0,0,0,0],
-            [0,0,0,0,1,1,0,0,0,1,1,1,0,0,0,0,0,0,0,0],
-            [0,0,0,0,1,1,0,0,0,1,1,1,0,0,0,0,0,0,0,0],
-            [0,0,0,0,1,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0]
+        // Mapa optimizado y corregido: 1 = Burro (🫏), 2 = Cerdo (🐷), 0 = Vacío
+        const mapaAnimales = [
+            [0,1,0,1,0,0,0,0,0,0,0,0,0,0,2,2,0,2,2,0,0,0],
+            [1,1,1,1,0,0,0,0,0,0,0,0,2,2,2,2,2,2,2,0,0],
+            [0,1,1,1,0,0,0,0,0,0,0,0,2,2,2,2,2,2,2,0,0],
+            [0,1,1,1,1,1,1,0,0,0,0,0,0,2,2,2,2,2,0,0,0],
+            [0,1,1,1,1,1,1,1,0,0,0,0,2,2,2,2,2,0,0,0,0],
+            [0,0,1,1,1,1,1,1,0,0,0,0,0,2,2,2,0,0,0,0,0],
+            [0,0,1,1,1,1,1,0,0,0,0,0,0,2,0,2,0,0,0,0,0],
+            [0,0,1,0,1,0,1,0,0,0,0,0,0,2,0,2,0,0,0,0,0],
+            [0,0,1,0,1,0,1,0,0,0,0,0,0,2,0,2,0,0,0,0,0],
+            [0,0,1,0,0,0,1,0,0,0,0,0,0,2,0,2,0,0,0,0,0]
         ];
 
-        // Mapa del Cerdo (🐷) 20x20 - Forma redonda y definida
-        const pigMap = [
-            [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-            [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-            [0,0,0,0,0,0,0,1,1,1,1,1,0,0,0,0,0,0,0,0],
-            [0,0,0,0,0,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0],
-            [0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0],
-            [0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0],
-            [0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0],
-            [0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0],
-            [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0],
-            [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0],
-            [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0],
-            [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0],
-            [0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0],
-            [0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0],
-            [0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0],
-            [0,0,0,0,1,1,1,0,0,0,0,1,1,1,0,0,0,0,0,0],
-            [0,0,0,0,1,1,0,0,0,0,0,0,1,1,0,0,0,0,0,0],
-            [0,0,0,0,1,1,0,0,0,0,0,0,1,1,0,0,0,0,0,0],
-            [0,0,0,0,1,1,0,0,0,0,0,0,1,1,0,0,0,0,0,0],
-            [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
-        ];
-
-        const donkeyCanvas = document.getElementById('donkeyCanvas');
-        const pigCanvas = document.getElementById('pigCanvas');
-        const textElement = document.getElementById('text');
+        const canvas = document.getElementById('animalesCanvas');
+        const textoElemento = document.getElementById('texto');
         
-        // MENSAJE ACTUALIZADO SEGÚN TU PETICIÓN
-        const message = "shirley eres como ese burro pq te emocionas con poco y eres pendeja y estupide";
+        // Texto actualizado con tu petición exacta
+        const mensaje = "shirley eres como ese burro pq te emocionas con poco y eres pendeja y estupide";
         
-        let allPixels = [];
+        let elementosFondo = [];
 
-        // Función para renderizar un animal en su canvas
-        function drawAnimal(canvas, map, emoji) {
-            map.forEach(row => {
-                row.forEach(cell => {
-                    const div = document.createElement('div');
-                    div.classList.add('pixel');
-                    if (cell === 1) {
-                        div.textContent = emoji;
-                        allPixels.push(div); // Guardar para la animación secuencial
-                    }
-                    canvas.appendChild(div);
-                });
+        // Insertar los emojis en las coordenadas
+        mapaAnimales.forEach(fila => {
+            fila.forEach(celda => {
+                const div = document.createElement('div');
+                div.classList.add('pixel');
+                if (celda === 1) {
+                    div.textContent = '🫏';
+                    elementosFondo.push(div);
+                } else if (celda === 2) {
+                    div.textContent = '🐷';
+                    elementosFondo.push(div);
+                }
+                canvas.appendChild(div);
             });
+        });
+
+        // Animación progresiva fluida
+        let indiceAnimal = 0;
+        function aparecerAnimales() {
+            if (indiceAnimal < elementosFondo.length) {
+                elementosFondo[indiceAnimal].classList.add('active');
+                indiceAnimal++;
+                setTimeout(aparecerAnimales, 25); 
+            } else {
+                setTimeout(escribirTexto, 500); 
+            }
         }
 
-        // 1. Dibujar ambos mapas (invisibles al inicio)
-        drawAnimal(donkeyCanvas, donkeyMap, '🫏');
-        drawAnimal(pigCanvas, pigMap, '🐷');
+        // Máquina de escribir
+        let indiceTexto = 0;
+        function escribirTexto() {
+            if (indiceTexto < mensaje.length) {
+                textoElemento.textContent += mensaje.charAt(indiceTexto);
+                indiceTexto++;
+                setTimeout(escribirTexto, 100);
+            }
+        }
 
-        // 2.
+        // Temporizador de 5 segundos obligatorio
+        setTimeout(aparecerAnimales, 5000);
+    </script>
+</body>
+</html>
